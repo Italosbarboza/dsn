@@ -10,7 +10,20 @@ import api from "../../services/api";
 
 import { useAuth } from "../../hooks/auth";
 
+
+import { DataGrid, ColDef, ValueGetterParams } from '@material-ui/data-grid';
+
 import logo from "../../assets/logo.svg";
+
+import Paper from '@material-ui/core/Paper';
+import { EditingState } from '@devexpress/dx-react-grid';
+import {
+  Grid,
+  Table,
+  TableHeaderRow,
+  TableEditRow,
+  TableEditColumn,
+} from '@devexpress/dx-react-grid-material-ui';
 
 import {
   Container,
@@ -44,6 +57,8 @@ const Dashboard: React.FC = () => {
   const { user, signOut } = useAuth();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [users, setUsers] = useState([]);
+
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [monthAvailability, setMonthAvailability] = useState<
     MonthAvailabilityItem[]
@@ -63,6 +78,33 @@ const Dashboard: React.FC = () => {
     setCurrentMonth(month);
   }, []);
 
+
+
+  const columns: ColDef[] = [
+    { field: 'id', headerName: 'ID', width: 70 },
+    { field: 'name', headerName: 'Nome', width: 130 },
+    { field: 'email', headerName: 'Email', width: 250 },
+  ];
+  
+  const rows = [
+    { id: 1, nome: 'Snow', email: 'Jon', age: 35 },
+    { id: 2, nome: 'Lannister', email: 'Cersei', age: 42 },
+    { id: 3, nome: 'Lannister', email: 'Jaime', age: 45 },
+    { id: 4, nome: 'Stark', email: 'Arya', age: 16 },
+    { id: 5, nome: 'Targaryen', email: 'Daenerys', age: null },
+    { id: 6, nome: 'Melisandre', email: null, age: 150 },
+    { id: 7, nome: 'Clifford', email: 'Ferrara', age: 44 },
+    { id: 8, nome: 'Frances', email: 'Rossini', age: 36 },
+    { id: 9, nome: 'Roxie', email: 'Harvey', age: 65 },
+  ];
+  
+
+
+
+
+
+
+
   useEffect(() => {
     if(user && user.acesso !== '1') {
       history.push("/dashboard");
@@ -77,6 +119,14 @@ const Dashboard: React.FC = () => {
       .then(response => {
         setMonthAvailability(response.data);
       });
+
+      api
+      .get(`/profile/all`)
+      .then(response => {
+        setUsers(response.data);
+        console.log(response.data);
+      });
+
   }, [currentMonth, user.id]);
 
   useEffect(() => {
@@ -168,7 +218,11 @@ const Dashboard: React.FC = () => {
 
       <Content>
         <Schedule>
-          <h1>Gerenciamento de Arquivos</h1>
+          <h1>Gerenciamento de Arquivos</h1><br></br><br></br>
+
+          <div style={{ height: 400, width: '100%' }}>
+            <DataGrid rows={users} columns={columns} pageSize={5} checkboxSelection />
+          </div>
           {/*
           <p>
             {isToday(selectedDate) && <span>Hoje</span>}

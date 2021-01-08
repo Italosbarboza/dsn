@@ -25,4 +25,8 @@ profileRouter.put(
   profileController.update,
 );
 
+profileRouter.get("/all", profileController.index);
+
+profileRouter.delete("/:id_delete", profileController.delete);
+
 export default profileRouter;
