@@ -11,6 +11,8 @@ const profileController = new ProfileController();
 profileRouter.use(authMiddleware);
 
 profileRouter.get("/", profileController.show);
+profileRouter.get("/adm/:user_id", profileController.showAdm);
+
 profileRouter.put(
   "/",
   celebrate({
@@ -23,6 +25,12 @@ profileRouter.put(
     },
   }),
   profileController.update,
+);
+
+profileRouter.put(
+  "/adm/:user_id",
+  
+  profileController.updateAdm,
 );
 
 profileRouter.get("/all", profileController.index);

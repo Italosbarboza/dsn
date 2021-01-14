@@ -9,7 +9,9 @@ import ForgotPassword from "../pages/ForgotPassword";
 import ResetPassword from "../pages/ResetPassword";
 import Dashboard from "../pages/Dashboard";
 import DashboardAdm from "../pages/DashboardAdm";
+import SignUpAdm from "../pages/SignUpAdm";
 import Profile from "../pages/Profile";
+import ProfileAdm from "../pages/Profile";
 
 const Routes: React.FC = () => {
   return (
@@ -20,6 +22,8 @@ const Routes: React.FC = () => {
       <Route path="/reset-password" component={ResetPassword} />
 
       <Route path="/dashboard-adm" component={DashboardAdm} isPrivate />
+      <Route path="/adm/create-new-user" component={SignUpAdm} isPrivate />
+      <Route path="/adm/profile" component={ProfileAdm} isPrivate />
       <Route path="/dashboard" component={Dashboard} isPrivate />
       <Route path="/profile" component={Profile} isPrivate />
     </Switch>

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
+import ProfileAdm from '../ProfileAdm';
 import { useHistory, Link } from "react-router-dom";
 import { FiPower, FiClock } from "react-icons/fi";
 import { isToday, format, parseISO, isAfter } from "date-fns";
@@ -13,17 +14,26 @@ import { useAuth } from "../../hooks/auth";
 
 import { DataGrid, ColDef, ValueGetterParams } from '@material-ui/data-grid';
 
-import logo from "../../assets/logo.svg";
+import { render } from "react-dom";
+import PropTypes from "prop-types";
+import { withStyles } from "@material-ui/styles";
 
-import Paper from '@material-ui/core/Paper';
-import { EditingState } from '@devexpress/dx-react-grid';
+import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
+import Modal from '@material-ui/core/Modal';
+
 import {
-  Grid,
   Table,
-  TableHeaderRow,
-  TableEditRow,
-  TableEditColumn,
-} from '@devexpress/dx-react-grid-material-ui';
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow
+} from "@material-ui/core";
+
+import Paper from "@material-ui/core/Paper";
+import Button from "@material-ui/core/Button";
+import EditIcon from '@material-ui/icons/Edit';
+import DeleteIcon from '@material-ui/icons/Delete';
+import PersonAddIcon from '@material-ui/icons/PersonAdd';
 
 import {
   Container,
@@ -53,11 +63,36 @@ interface Appointments {
   };
 }
 
+interface Users {
+  id: number;
+  name: string;
+  email: string;
+  password: string;
+}
+
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    paper: {
+      position: 'absolute',
+      width: 400,
+      backgroundColor: theme.palette.background.paper,
+      border: '2px solid #000',
+      boxShadow: theme.shadows[5],
+      padding: theme.spacing(2, 4, 3),
+    },
+  }),
+);
+
 const Dashboard: React.FC = () => {
+
+
+  const classes = useStyles();
+
   const { user, signOut } = useAuth();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<Users[]>([]);
+  const [idEdit, SetIdEdit] = useState<string>();
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [monthAvailability, setMonthAvailability] = useState<
@@ -78,33 +113,66 @@ const Dashboard: React.FC = () => {
     setCurrentMonth(month);
   }, []);
 
+  const [modalStyle] = React.useState(getModalStyle);
+  const [open, setOpen] = React.useState(false);
 
+  const handleOpen = (i: number) => {
+    let idUser = users[i].id;
+    SetIdEdit(String(idUser));
+    setOpen(true);
+  };
 
-  const columns: ColDef[] = [
-    { field: 'id', headerName: 'ID', width: 70 },
-    { field: 'name', headerName: 'Nome', width: 130 },
-    { field: 'email', headerName: 'Email', width: 250 },
-  ];
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  function rand() {
+    return Math.round(Math.random() * 20) - 10;
+  }
+
+  const body = (
+    <div style={modalStyle} className={classes.paper}>
+      <h2 id="simple-modal-title">Text in a modal</h2>
+      <p id="simple-modal-description">
+        Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
+      </p>
+       <ProfileAdm title={idEdit}/>
+    </div>
+  );
   
-  const rows = [
-    { id: 1, nome: 'Snow', email: 'Jon', age: 35 },
-    { id: 2, nome: 'Lannister', email: 'Cersei', age: 42 },
-    { id: 3, nome: 'Lannister', email: 'Jaime', age: 45 },
-    { id: 4, nome: 'Stark', email: 'Arya', age: 16 },
-    { id: 5, nome: 'Targaryen', email: 'Daenerys', age: null },
-    { id: 6, nome: 'Melisandre', email: null, age: 150 },
-    { id: 7, nome: 'Clifford', email: 'Ferrara', age: 44 },
-    { id: 8, nome: 'Frances', email: 'Rossini', age: 36 },
-    { id: 9, nome: 'Roxie', email: 'Harvey', age: 65 },
-  ];
+  function getModalStyle() {
+    const top = 50 + rand();
+    const left = 50 + rand();
   
+    return {
+      top: `${top}%`,
+      left: `${left}%`,
+      transform: `translate(-${top}%, -${left}%)`,
+    };
+  }
 
+  function deleteItem(i: number) {
+    console.log(i);
+    const id: number = users[i].id;
+    setUsers(users.filter(user => user.id !== id));
 
+    api
+      .delete(`/profile/${users[i].id}`)
+      .then(response => {
+        console.log('Deu certo');
+      });
+  }
 
+  function updateUser(i: number) {
+    const id: number = users[i].id;
+    setUsers(users.filter(user => user.id !== id));
+  }
 
-
-
-
+  function addUser() {
+    console.log('Chegou aqui');
+    history.push('/adm/create-new-user');
+  }
+  
   useEffect(() => {
     if(user && user.acesso !== '1') {
       history.push("/dashboard");
@@ -124,6 +192,7 @@ const Dashboard: React.FC = () => {
       .get(`/profile/all`)
       .then(response => {
         setUsers(response.data);
+        console.log('Aquiiiiiiiiiiii');
         console.log(response.data);
       });
 
@@ -218,11 +287,76 @@ const Dashboard: React.FC = () => {
 
       <Content>
         <Schedule>
-          <h1>Gerenciamento de Arquivos</h1><br></br><br></br>
+          <h1>Gerenciamento de Usuários</h1><br></br>
 
-          <div style={{ height: 400, width: '100%' }}>
-            <DataGrid rows={users} columns={columns} pageSize={5} checkboxSelection />
-          </div>
+          <PersonAddIcon
+            type='button'
+            onClick={() => addUser()}
+            color="secondary">
+          </PersonAddIcon>
+
+          <br></br><br></br>
+
+          <Paper>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Nome</TableCell>
+              <TableCell>Email</TableCell>
+              <TableCell>Deletar</TableCell>
+              <TableCell>Atualizar</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {users.map((item, i) => {
+              return (
+                <TableRow key={`row-${i}`}>
+                  <TableCell>{item.name}</TableCell>
+                  <TableCell>{item.email}</TableCell>
+                  <TableCell>
+                    <DeleteIcon
+                      type='button'
+                      onClick={() => deleteItem(i)}
+                      color="secondary"
+                    >
+                      Delete
+                    </DeleteIcon>
+                    </TableCell>
+                  <TableCell>
+                    <EditIcon
+                      type='button'
+                      onClick={() => handleOpen(i)}
+                      color="secondary"
+                    >
+                      Atualizar
+                    </EditIcon>
+                 </TableCell>
+
+
+
+
+
+
+                 <Modal
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="simple-modal-title"
+        aria-describedby="simple-modal-description"
+      >
+        {body}
+      </Modal>
+
+
+
+
+
+
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </Paper>
           {/*
           <p>
             {isToday(selectedDate) && <span>Hoje</span>}

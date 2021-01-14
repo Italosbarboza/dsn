@@ -13,6 +13,20 @@ import { useAuth } from "../../hooks/auth";
 import logo from "../../assets/logo.svg";
 
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow
+} from "@material-ui/core";
+
+import EditIcon from '@material-ui/icons/Edit';
+import DeleteIcon from '@material-ui/icons/Delete';
+import VisibilityIcon from '@material-ui/icons/Visibility';
+
+import Paper from "@material-ui/core/Paper";
+
+import {
   Container,
   Header,
   HeaderContent,
@@ -40,15 +54,68 @@ interface Appointments {
   };
 }
 
+interface Files {
+  id_arquivo: number;
+  cod_user: string;
+  nome_arquivo: string;
+}
+
+
 const Dashboard: React.FC = () => {
   const { user, signOut } = useAuth();
 
+  const [files, setFiles] = useState<Files[]>([]);
+
+
+  const state = {
+    items: [
+      {
+        name: "foo"
+      },
+      {
+        name: "bar"
+      },
+      {
+        name: "baz"
+      }
+    ]
+  };
+
+  function deleteItem(i: number) {
+    const id: number = files[i].id_arquivo;
+    setFiles(files.filter(file => file.id_arquivo !== id));
+
+    api
+      .delete(`/files/${files[i].id_arquivo}`)
+      .then(response => {
+        console.log('Deu certo');
+      });
+  }
+
+  const handleOpen = (i: number) => {
+    //let idUser = users[i].id;
+    //SetIdEdit(String(idUser));
+    //setOpen(true);
+  };
+
+  const handleViewOpen = (i: number) => {
+    console.log(files[i]);
+    const link = 'https://web-validador-dsn.s3.amazonaws.com/' + files[i].nome_arquivo;
+    window.open(link);
+
+    //let idUser = users[i].id;
+    //SetIdEdit(String(idUser));
+    //setOpen(true);
+  };
+  
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [monthAvailability, setMonthAvailability] = useState<
     MonthAvailabilityItem[]
   >([]);
   const [appointments, setAppointments] = useState<Appointments[]>([]);
+  const [cardFile, setCardFile] = useState<any>();
+
 
   const handleDateChange = useCallback((day: Date, modifiers: DayModifiers) => {
     if (modifiers.available && !modifiers.disabled) {
@@ -78,28 +145,13 @@ const Dashboard: React.FC = () => {
       .then(response => {
         setMonthAvailability(response.data);
       });
-  }, [currentMonth, user.id]);
-
-  useEffect(() => {
-    api
-      .get<Appointments[]>("/appointments/me", {
-        params: {
-          year: selectedDate.getFullYear(),
-          month: selectedDate.getMonth() + 1,
-          day: selectedDate.getDate(),
-        },
-      })
+      api
+      .get(`/files`)
       .then(response => {
-        const appointmentsFormatted = response.data.map(appointment => {
-          return {
-            ...appointment,
-            hourFormatted: format(parseISO(appointment.date), "HH:mm"),
-          };
-        });
-
-        setAppointments(appointmentsFormatted);
+        setFiles(response.data);
+        console.log(response.data);
       });
-  }, [selectedDate]);
+  }, [currentMonth, user.id]);
 
   const disabledDays = useMemo(() => {
     const dates = monthAvailability
@@ -144,6 +196,29 @@ const Dashboard: React.FC = () => {
     );
   }, [appointments]);
 
+  const handleUploadFile = (e: any) => setCardFile(e.target.files[0]);
+
+  const addNewCard = async () => {
+    //setSaving(true);
+    const data = new FormData();
+    data.append("avatar", cardFile);
+
+    console.log(data);
+
+    api
+    .patch(`/files/avatar/`, data)
+    .then(response => {
+      console.log(response.data);
+    });
+    
+
+    history.push("/dashboard");
+    // ------------------------------------------------------------
+    // ...
+    // Inserimos aqui nossa chamada POST/PUT
+    // para enviarmos nosso arquivo.
+  };
+
   return (
     <Container>
       <Header>
@@ -169,7 +244,65 @@ const Dashboard: React.FC = () => {
 
       <Content>
         <Schedule>
-          <h1>Gerenciamento de Arquivos</h1>
+          <h1>Gerenciamento de Arquivos</h1><br></br><br></br><br></br>
+
+
+          <input name="foo" type="file" onChange={handleUploadFile} accept="image/jpeg,image/png,application/pdf"/>
+          <br></br><br></br>      
+          <button onClick={addNewCard}>Enviar Arquivo</button>
+
+        <br></br><br></br>
+
+        <Paper>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Id</TableCell>
+              <TableCell>Arquivo</TableCell>
+              <TableCell>Vizualizar</TableCell>
+              <TableCell>Deletar</TableCell>
+              <TableCell>Atualizar</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {files.map((file, i) => {
+              return (
+                <TableRow key={`row-${i}`}>
+                  <TableCell>{file.id_arquivo}</TableCell>
+                  <TableCell>{file.nome_arquivo}</TableCell>
+                  <TableCell>
+                    <VisibilityIcon
+                      type='button'
+                      onClick={() => handleViewOpen(i)}
+                      color="secondary"
+                    >
+                      Vizualizar
+                    </VisibilityIcon>
+                 </TableCell>
+                  <TableCell>
+                    <DeleteIcon
+                      type='button'
+                      onClick={() => deleteItem(i)}
+                      color="secondary"
+                    >
+                      Delete
+                    </DeleteIcon>
+                    </TableCell>
+                  <TableCell>
+                    <EditIcon
+                      type='button'
+                      onClick={() => handleOpen(i)}
+                      color="secondary"
+                    >
+                      Atualizar
+                    </EditIcon>
+                 </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </Paper>
           {/*
           <p>
             {isToday(selectedDate) && <span>Hoje</span>}

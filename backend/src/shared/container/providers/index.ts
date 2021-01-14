@@ -1,5 +1,7 @@
 import { container } from "tsyringe";
 
+import uploadConfig from "@config/upload";
+
 import IStorageProvider from "./StorageProvider/models/IStorageProvider";
 import DiskStorageProvider from "./StorageProvider/implementations/DiskStorageProvider";
 
@@ -11,10 +13,16 @@ import EtherealMailProvider from "./MailProvider/implementations/EtherealMailPro
 
 import ICacheProvider from "./CacheProvider/models/ICacheProvider";
 import RedisCacheProvider from "./CacheProvider/implementations/RedisCacheProvider";
+import S3StorageProvider from './StorageProvider/implementations/S3StorageProvider';
 
 container.registerSingleton<IStorageProvider>(
   "StorageProvider",
   DiskStorageProvider,
+);
+
+container.registerSingleton<IStorageProvider>(
+  "S3StorageProvider",
+  S3StorageProvider,
 );
 
 container.registerSingleton<IMailTemplateProvider>(
@@ -31,3 +39,10 @@ container.registerInstance<ICacheProvider>(
   "CacheProvider",
   container.resolve(RedisCacheProvider),
 );
+
+container.registerInstance<ICacheProvider>(
+  "CacheProvider",
+  container.resolve(RedisCacheProvider),
+);
+
+
